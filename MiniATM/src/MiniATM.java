@@ -1,159 +1,183 @@
-import javax.print.attribute.standard.DateTimeAtCompleted;
 import java.util.Scanner;
 
 public class MiniATM {
-    static String username = "user";
-    static String password = "12345";
+    // --- Kullanıcı bilgileri Örnek Statik Değerler Ödev içerisinde verilmiştir ---
+    private String username = "user";
+    private String password = "12345";
 
-    static String readUsername;
-    static String readPassword;
+    // --- Oturum/girdi alanları Kullanıcıdan değer alıp sabit olan username ve password ile kontrol etmek amacı ile eklenmiştir ---
+    private String readUsername;
+    private String readPassword;
+    private final Scanner read = new Scanner(System.in);
 
-    static int selectMenu;
-
-    static double amount = 0;
-    static double totalBalance = 0;
-    static double komisyon;
-    static double discount;
-
-    static double newPillAmount = 0;
-    static int count = 0;
-    static int attempt = 3;
-    static int remain;
-    static int billType;
+    // --- Uygulama içerisindeeki iş akışı için gerekli değişkenler eklenmiştir. ---
+    private double totalBalance = 0.0;
+    private double totalDeposit = 0;      // Toplam yatırılan
+    private double totalWithDraw = 0;     // Toplam çekilen
+    private double  totalPayBillCount = 0; // Ödenen fatura adedi
 
 
-    static int totalDeposit = 0;
-    static int totalWithDraw = 0;
-    static int totlalPayBillCount = 0;
-
-    static Scanner read = new Scanner(System.in);
-    static boolean condition = true;
+    private boolean condition = true;
+    private int count = 0;             // Hatalı giriş sayacı
+    private final int attempt = 3;     // Giriş hakkı
 
 
     public static void main(String[] args) {
+        MiniATM atm = new MiniATM();
+        atm.run();
+    }
 
+    // --- Ana akışı tek bir metod içerisinde toplayıp daha okunabilir bir kod görüntüsü elde etmek istedim ---
+    public void run() {
         while (count < attempt) {
-            System.out.print("Kullanıcı Adı Giriniz :");
+            System.out.print("Kullanıcı Adı Giriniz : ");
             readUsername = read.nextLine();
 
-            System.out.print("Parola Giriniz :");
+            System.out.print("Parola Giriniz : ");
             readPassword = read.nextLine();
 
-            if (!username.equals(readUsername) || !readPassword.equals(password)) {
-                count += 1;
-                remain = attempt - count;
+            if (!username.equals(readUsername) || !password.equals(readPassword)) {
+                count++;
+                int remain = attempt - count;
                 System.out.println("Kullanıcı Adı veya Şifre Hatalı !!");
                 System.out.println("Kalan Hak : " + remain);
                 continue;
             } else {
+                condition = true;
                 do {
-                    System.out.println("Banka Sistemine Hoşgeldiniz");
-                    System.out.println("1- Para Yatır ");
-                    System.out.println("2- Para Çek ");
-                    System.out.println("3- Para  Bakiye Görüntüle");
-                    System.out.println("4- Fatura Öde ");
-                    System.out.println("5- Çıkış ");
+                    System.out.println("\nBanka Sistemine Hoşgeldiniz");
+                    System.out.println("1- Para Yatır");
+                    System.out.println("2- Para Çek");
+                    System.out.println("3- Bakiye Görüntüle");
+                    System.out.println("4- Fatura Öde");
+                    System.out.println("5- Çıkış");
 
-                    System.out.print("Yapacağınız ilgili işlemi seçiniz :");
-                    selectMenu = read.nextInt();
+                    System.out.print("Yapacağınız işlemi seçiniz : ");
+                    if (!read.hasNextInt()) {
+                        System.out.println("Geçersiz giriş! Lütfen sayı girin.");
+                        read.nextLine(); // hatalı girdiyi temizle
+                        continue;
+                    }
+                    int selectMenu = read.nextInt();
 
                     switch (selectMenu) {
-                        case 1:
+                        case 1 -> {
                             System.out.print("Yatırmak İstediğiniz Tutarı Girin: ");
-                            amount = read.nextInt();
-                            deposite(amount);
-                            break;
-                        case 2:
-                            System.out.print("Çekmek İstediğiniz Turarı Girin : ");
-                            amount = read.nextInt();
-                            withdraw(amount);
-                            break;
-                        case 3:
-                            System.out.println("Bakiyeniz " + totalBalance);
-                            break;
-                        case 4:
-                            System.out.println("1- Elektrik");
-                            System.out.println("2- Su");
-                            System.out.println("3 -İnternet");
-
-
+                            Double amount = safeReadPositiveDouble();
+                            if (amount != null) deposit(amount);
+                        }
+                        case 2 -> {
+                            System.out.print("Çekmek İstediğiniz Tutarı Girin : ");
+                            Double amount = safeReadPositiveDouble();
+                            if (amount != null) withdraw(amount);
+                        }
+                        case 3 -> System.out.println("Bakiyeniz: " + totalBalance);
+                        case 4 -> {
+                            System.out.println("1- Elektrik ( %5 indirim )");
+                            System.out.println("2- Su       ( %3 indirim )");
+                            System.out.println("3- İnternet ( %2 indirim )");
                             System.out.print("Ödemek İstediğiniz Fatura Tipini Girin : ");
-                            billType = read.nextInt();
-
+                            if (!read.hasNextInt()) {
+                                System.out.println("Geçersiz fatura tipi!");
+                                read.nextLine();
+                                continue;
+                            }
+                            int billType = read.nextInt();
                             System.out.print("Fatura Tutarı Girin: ");
-                            amount = read.nextInt();
-                            payBill(billType, amount);
-                            break;
-
-                        case 5:
+                            Double amount = safeReadPositiveDouble();
+                            if (amount != null) payBill(billType, amount);
+                        }
+                        case 5 -> {
                             System.out.println("Çıkış Yapılıyor ... ");
                             printSummary();
-                            condition = false;
-                            break;
-
-                        default:
-                            System.out.println("Uygun bir seçenek seçin");
-                            break;
+                            condition = false; // menüden çık
+                        }
+                        default -> System.out.println("Uygun bir seçenek seçin");
                     }
 
-                } while (condition == true);
+                } while (condition);
 
+                // Menüyü kapattıysan programı bitir
+                break;
             }
-
         }
     }
 
-    private static void printSummary() {
-        System.out.println("Toplam Bakiye " + totalBalance);
-        System.out.println("Toplam Yatırılan Tutar : " + totalDeposit);
+    // --- Para Giriş ve Çıkışı için yardımcı bir metot oluşturulmuş olunup bu metot para yatırma / para çekme ve fatura ödemede kullanılmıştır---
+    private Double safeReadPositiveDouble() {
+        if (!read.hasNextDouble()) {
+            System.out.println("Geçersiz tutar! Sayısal bir değer girin.");
+            read.nextLine(); // hatalı girdiyi temizle
+            return null;
+        }
+        double val = read.nextDouble();
+        if (val <= 0) {
+            System.out.println("Sıfır veya negatif tutar geçersizdir.");
+            return null;
+        }
+        return val;
+    }
+
+    // --- Özet ---
+    private void printSummary() {
+        System.out.println("\n--- Özet ---");
+        System.out.println("Toplam Bakiye: " + totalBalance);
+        System.out.println("Toplam Yatırılan Tutar: " + totalDeposit);
         System.out.println("Toplam Çekilen Tutar: " + totalWithDraw);
-        System.out.println("Toplam Ödenen Fatura Sayısı  : " + totlalPayBillCount);
+        System.out.println("Toplam Ödenen Fatura Sayısı: " + totalPayBillCount);
     }
 
-    private static void payBill(int billType, double amount) {
-        if (billType <= 3 && billType > 0) {
-            if (billType == 1) {
-                discount = 0.05;
-                System.out.println("Fatura Tutarı : " + amount);
-                newPillAmount = amount - amount * discount;
-                totalBalance = totalBalance - newPillAmount;
-                System.out.println("İndirim Sonrası Fatura Tutarı : " + newPillAmount);
-            } else if (billType == 2) {
-                discount = 0.03;
-                System.out.println("Fatura Tutarı : " + amount);
-                newPillAmount = amount - amount * discount;
-                totalBalance -= totalBalance - newPillAmount;
-                System.out.println("İndirim Sonrası Fatura Tutarı : " + newPillAmount);
-            } else if (billType == 3) {
-                discount = 0.02;
-                System.out.println("Fatura Tutarı : " + amount);
-                newPillAmount = amount - amount * discount;
-                totalBalance -= totalBalance - newPillAmount;
-                System.out.println("İndirim Sonrası Fatura Tutarı : " + newPillAmount);
-            }
-            totlalPayBillCount++;
+    // --- Fatura Ödeme ---
+    private void payBill(int billType, double amount) {
+        if (billType < 1 || billType > 3) {
+            System.out.println("Geçersiz fatura tipi!");
+            return;
         }
+
+        double discount;
+        if (billType == 1)
+            discount = 0.05; // Elektrik
+        else if (billType == 2)
+            discount = 0.03; // Su
+        else
+            discount = 0.02; // İnternet
+
+        double discounted = amount - amount * discount;
+
+        if (totalBalance < discounted) {
+            System.out.println("Yetersiz bakiye! (Gerekli: " + discounted + ", Bakiye: " + totalBalance + ")");
+            return;
+        }
+
+        totalBalance -= discounted;
+        totalPayBillCount++;
+        System.out.println("Fatura Tutarı : " + amount);
+        System.out.println("İndirim Oranı : " + (discount * 100) + "%");
+        System.out.println("Ödenen Tutar  : " + discounted);
+        System.out.println("Yeni Bakiye   : " + totalBalance);
     }
 
-    public static void withdraw(double amount) {
-        if (totalBalance >= amount && amount > 0) {
-            komisyon = amount > 5000 ? amount * 0.02 : 0;
-            totalBalance = totalBalance - amount - komisyon;
-            totalWithDraw += amount;
-            System.out.println("Para Çekilmiştir.");
-        } else if (amount == 0) {
-            System.out.println("Sıfır Tl Yatırılamaz");
-        } else {
-            System.out.println("Yetersiz Bakiye");
+    // --- Para Çekme ---
+    private void withdraw(double amount) {
+        // Komisyon: 5000 TL üzeri %2
+        double komisyon = (amount > 5000) ? amount * 0.02 : 0.0;
+        double toplamCekim = amount + komisyon;
+
+        if (totalBalance < toplamCekim) {
+            System.out.println("Yetersiz bakiye! (Gerekli: " + toplamCekim + ", Bakiye: " + totalBalance + ")");
+            return;
         }
 
+        totalBalance -= toplamCekim;
+        totalWithDraw +=  amount;
+        System.out.println("Para çekildi. (Komisyon: " + komisyon + ")");
+        System.out.println("Yeni Bakiye : " + totalBalance);
     }
 
-    public static void deposite(double amount) {
-        if (amount > 0) {
-            totalBalance += amount;
-            System.out.println("Para Yatırılmıştır");
-            totalDeposit += amount;
-        }
+    // --- Para Yatırma ---
+    private void deposit(double amount) {
+        totalBalance += amount;
+        totalDeposit += amount;
+        System.out.println("Para yatırılmıştır. Yeni Bakiye: " + totalBalance);
     }
 }
